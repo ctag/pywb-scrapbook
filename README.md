@@ -1,6 +1,8 @@
 # pywb-scrapbook
 Page-oriented frontend to pywb
 
+<img src="https://raw.githubusercontent.com/ctag/pywb-scrapbook/master/logo.png" width="150px" />
+
 ## What is this?
 
 pywb-scrapbook is a react frontend to browse and view pages you have archived with pywb. 
