@@ -36,6 +36,71 @@ sql.createPage = function (id, url, title, desc, category, callback) {
   });
 };
 
+sql.createNewPage = function (url, title, desc, category, callback) {
+  db.serialize(function () {
+    db.run('INSERT INTO pages '+
+    '(url, title, description, category)'+
+    ' VALUES (?, ?, ?, ?)',
+  url, title, desc, category,
+  function (err) {
+    console.log("SQL errors: ", err);
+    if (err === null) {
+      console.log("Num rows changed: ", this.changes);
+    }
+    callback(err, this.changes);
+  });
+  });
+};
+
+sql.deletePage = function (id, callback) {
+  db.serialize(function () {
+    db.run('DELETE FROM pages WHERE id = ?',
+    id,
+    function (err) {
+      console.log("SQL errors: ", err);
+      if (err === null) {
+        console.log("Num rows changed: ", this.changes);
+      }
+      callback(err, id, this.changes);
+    });
+  });
+};
+
+sql.deleteCategory = function (id, callback) {
+  db.serialize(function () {
+    db.get('SELECT * FROM categories WHERE id = ?', id,
+    function (err, row) {
+      console.log("SQL errors: ", err);
+      if (err === null) {
+        console.log("Category to delete: ", row);
+        db.run('UPDATE pages SET category = ? WHERE category = ?', row.parent_id, id,
+        function (err, row) {
+          console.log("SQL errors: ", err);
+          if (err === null) {
+            console.log("Moved pages: ", row);
+            console.log("rows updated: ", this.changes)
+            db.run('DELETE FROM categories WHERE id = ?', id,
+            function (err) {
+              console.log("SQL errors: ", err);
+              if (err === null) {
+                console.log("Num rows changed: ", this.changes);
+              }
+              callback(err);
+            });
+          } else {
+            console.log("update err: ", err)
+            callback(err);
+            return
+          }
+        });
+      } else {
+        callback(err);
+        return
+      }
+    });
+  });
+};
+
 sql.createCategory = function (category, description, parent_id, callback) {
   db.serialize(function () {
     db.run('INSERT INTO categories '+
@@ -48,6 +113,22 @@ sql.createCategory = function (category, description, parent_id, callback) {
       console.log("Num rows changed: ", this.changes);
     }
     callback(err, category, this.changes);
+  });
+  });
+};
+
+sql.createNewCategory = function (name, description, parent_id, callback) {
+  db.serialize(function () {
+    db.run('INSERT INTO categories '+
+    '(name, description, parent_id)'+
+    ' VALUES (?, ?, ?)',
+  name, description, parent_id,
+  function (err) {
+    console.log("SQL errors: ", err);
+    if (err === null) {
+      console.log("Num rows changed: ", this.changes);
+    }
+    callback(err, this.changes);
   });
   });
 };
@@ -106,75 +187,5 @@ sql.fetchCategoryPages = function (id, callback) {
     });
   // });
 }
-
-sql.createAccount = function (user, callback) {
-  db.serialize(function () {
-    db.run('INSERT INTO users (id, authMethod, givenName, familyName, accountType) VALUES (?, ?, ?, ?, ?)',
-  user.id, user.authMethod, user.givenName, user.familyName, user.accountType,
-  function (err) {
-    console.log("SQL errors: ", err);
-    if (err === null) {
-      console.log("Num rows changed: ", this.changes);
-    }
-    //callback(err, this.changes);
-  });
-  });
-};
-
-sql.login = function (user, callback) {
-  db.serialize(function () {
-    db.run('UPDATE users SET numLogins=?, lastLogIn=? WHERE id=?;',
-  (user.numLogins+1), new Date().toString(), user.id,
-  function (err) {
-    console.log("SQL errors: ", err);
-    if (err === null) {
-      console.log("Num rows changed: ", this.changes);
-    }
-    //callback(err, this.changes);
-  });
-  });
-};
-
-sql.fetchUser = function (id, authMethod, callback) {
-  if (req.authMethod !== 'google') {
-    callback(null);
-  }
-  if (typeof(req.user.id) !== 'string') {
-    callback(null);
-  }
-  var googleId = req.user.id;
-  //db.serialize(function () {
-    console.log("Finding account for " + googleId);
-    db.get('SELECT * FROM users WHERE googleId=?;', googleId,
-    function (err, row) {
-      if (typeof(row) === 'undefined') {
-        callback(null);
-      }
-      //console.log("returned row: ", row);
-      callback(row);
-    });
-  //});
-};
-
-// user = req.user
-sql.fetchActiveUser = function (user, callback) {
-  // Make sure req is valid
-  if (user.authMethod !== 'google' && user.authMethod !== 'ldap' && user.authMethod !== 'local') {
-    callback(null);
-  }
-  if (typeof(user.id) !== 'string') {
-    callback(null);
-  }
-  // Check for google auth
-  if (user.authMethod === 'google') {
-    console.log("Finding google user for " + user.id);
-    db.get('SELECT * FROM users WHERE authMethod=? AND id=?;', user.authMethod, user.id,
-    function (err, row) {
-      // row is undefined if user is not in DB
-      callback(row);
-      return;
-    });
-  }
-};
 
 module.exports = sql;

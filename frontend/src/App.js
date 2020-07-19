@@ -24,7 +24,7 @@ import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import ListSubheader from '@material-ui/core/ListSubheader';
 import DashboardIcon from '@material-ui/icons/Dashboard';
-import ShoppingCartIcon from '@material-ui/icons/ShoppingCart';
+import DeleteIcon from '@material-ui/icons/Delete';
 import PeopleIcon from '@material-ui/icons/People';
 import BarChartIcon from '@material-ui/icons/BarChart';
 import LayersIcon from '@material-ui/icons/Layers';
@@ -37,11 +37,207 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import FolderIcon from '@material-ui/icons/FolderOpen';
 import BookmarkIcon from '@material-ui/icons/Bookmark';
 import Button from '@material-ui/core/Button';
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
 
 const drawerWidth = 240;
 
+function CreatePageDialog(props) {
+  const [formUrl, setFormUrl] = useState("")
+  // const [formTitle, setFormTitle] = useState("")
+  const [formDesc, setFormDesc] = useState("")
+  const [formPid, setFormPid] = useState(1)
+
+  let handleUrlChange = (event) => {
+    setFormUrl(event.target.value)
+  }
+
+  // let handleTitleChange = (event) => {
+  //   setFormTitle(event.target.value)
+  // }
+
+  let handleDescChange = (event) => {
+    setFormDesc(event.target.value)
+  }
+
+  let handlePidChange = (event) => {
+    setFormPid(event.target.value)
+  }
+
+  let handleSubmit = () => {
+    let req = "http://localhost:3000/create/page"
+    fetch(req, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        url: formUrl,
+        // title: formTitle,
+        desc: formDesc,
+        pid: formPid,
+      })
+    })
+    .then(res => res.text())
+    .then((result) => {
+      console.log("create category: ", req, typeof(result), result)
+    })
+    .catch((error) => {
+        console.log("Error: ", error)
+    })
+  }
+
+  return(
+    <Dialog open={props.open} onClose={props.closeFunc}>
+      <DialogTitle id="form-create-page">Create New Page</DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          To create a new bookmark page, please enter the following information.
+        </DialogContentText>
+        <TextField
+          id="form-create-page-url"
+          label="URL"
+          type="text"
+          value={formUrl}
+          onChange={handleUrlChange}
+        />
+        <br />
+        {/*<TextField
+          id="form-create-page-title"
+          label="Title"
+          type="text"
+          value={formTitle}
+          onChange={handleTitleChange}
+        />
+        <br />*/}
+        <TextField
+          id="form-create-page-desc"
+          label="Description"
+          type="text"
+          value={formDesc}
+          onChange={handleDescChange}
+        />
+        <br />
+        <TextField
+          id="form-create-page-parentid"
+          label="Parent ID"
+          type="number"
+          value={formPid}
+          onChange={handlePidChange}
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={props.closeFunc}>
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit} color="primary">
+          Add
+        </Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
+function CreateCategoryDialog(props) {
+  const [formName, setFormName] = useState("")
+  const [formDesc, setFormDesc] = useState("")
+  const [formPid, setFormPid] = useState(1)
+
+  let handleNameChange = (event) => {
+    setFormName(event.target.value)
+  }
+
+  let handleDescChange = (event) => {
+    setFormDesc(event.target.value)
+  }
+
+  let handlePidChange = (event) => {
+    setFormPid(event.target.value)
+  }
+
+  let handleSubmit = () => {
+    let req = "http://localhost:3000/create/category"
+    fetch(req, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: formName,
+        desc: formDesc,
+        pid: formPid,
+      })
+    })
+    .then(res => res.text())
+    .then((result) => {
+      console.log("create category: ", req, typeof(result), result)
+    })
+    .catch((error) => {
+        console.log("Error: ", error)
+    })
+  }
+
+  return(
+    <Dialog open={props.open} onClose={props.closeFunc}>
+      <DialogTitle id="form-create-category">Create New Category</DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          To create a new category, please enter the following information.
+        </DialogContentText>
+        <TextField
+          id="form-create-category-name"
+          label="Name"
+          type="text"
+          value={formName}
+          onChange={handleNameChange}
+        />
+        <br />
+        <TextField
+          id="form-create-category-desc"
+          label="Description"
+          type="text"
+          value={formDesc}
+          onChange={handleDescChange}
+        />
+        <br />
+        <TextField
+          id="form-create-category-parentid"
+          label="Parent ID"
+          type="number"
+          value={formPid}
+          onChange={handlePidChange}
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={props.closeFunc}>
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit} color="primary">
+          Add
+        </Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
 function ShowPage(props) {
+  const classes = useStyles();
   const [cdx, setCdx] = useState("")
+
+  function deletePage() {
+    fetch("http://localhost:3000/delete/page/"+props.page.id)
+    .then(res => res.json())
+    .then((result) => {
+      console.log("fetch: ", typeof(result), result)
+      },
+      (error) => {
+        console.log("Error: ", error)
+      }
+    )
+  }
 
   useEffect(() => {
     let req = "http://localhost:3000/cdx"
@@ -67,12 +263,17 @@ function ShowPage(props) {
   return(
     <Accordion
       TransitionProps={{ unmountOnExit: true }}
+      className={classes.accordion}
     >
       <AccordionSummary
         expandIcon={<ExpandMoreIcon />}
       >
         <BookmarkIcon style={{marginRight: 10}} />
         Page: {props.page.id} - {props.page.title}
+        <DeleteIcon
+          style={{position: "absolute", right: 50}}
+          onClick={deletePage}
+        />
       </AccordionSummary>
       <AccordionDetails
         style={{
@@ -100,9 +301,22 @@ function ShowPage(props) {
 }
 
 function ShowCat(props) {
+  const classes = useStyles();
   const [cat, setCat] = useState({id: '', name: ''})
   const [subCats, setSubCats] = useState([])
   const [pages, setPages] = useState([])
+
+  function deleteCat() {
+    fetch("http://localhost:3000/delete/category/"+cat.id)
+    .then(res => res.json())
+    .then((result) => {
+      console.log("fetch: ", typeof(result), result)
+      },
+      (error) => {
+        console.log("Error: ", error)
+      }
+    )
+  }
 
   useEffect(() => {
     fetch("http://localhost:3000/category/"+props.id)
@@ -149,12 +363,17 @@ function ShowCat(props) {
   return(
     <Accordion
       TransitionProps={{ unmountOnExit: true }}
+      className={classes.accordion}
     >
       <AccordionSummary
         expandIcon={<ExpandMoreIcon />}
       >
         <FolderIcon style={{marginRight: 10}} />
         Category: {cat.id} - {cat.name}
+        <DeleteIcon
+          style={{position: "absolute", right: 50}}
+          onClick={deleteCat}
+        />
       </AccordionSummary>
       <AccordionDetails
         style={{
@@ -307,9 +526,15 @@ const useStyles = makeStyles((theme) => ({
   fixedHeight: {
     height: 240,
   },
+  accordion: {
+    // border: "1px solid #000",
+    boxShadow: "2px 2px 1px -1px rgba(0,0,0,0.3),0px 0px 1px 0px rgba(0,0,0,0.24),1px 1px 3px 0px rgba(0,0,0,0.22)",
+  },
 }));
 
 export default function Dashboard() {
+  const [openCatDialog, setOpenCatDialog] = React.useState(false)
+  const [openPageDialog, setOpenPageDialog] = React.useState(false)
   const classes = useStyles();
   const [open, setOpen] = React.useState(true);
   const [page, setPage] = React.useState("pages");
@@ -401,12 +626,32 @@ export default function Dashboard() {
               </ListItemIcon>
               <ListItemText primary="Import" />
             </ListItem>
+            <ListItem button onClick={() => {setOpenCatDialog(true)}}>
+              <ListItemIcon>
+                <DashboardIcon />
+              </ListItemIcon>
+              <ListItemText primary="Add Category" />
+            </ListItem>
+            <ListItem button onClick={() => {setOpenPageDialog(true)}}>
+              <ListItemIcon>
+                <DashboardIcon />
+              </ListItemIcon>
+              <ListItemText primary="Add Page" />
+            </ListItem>
           </div>
         </List>
       </Drawer>
       <main className={classes.content}>
         <div className={classes.appBarSpacer} />
         <Container maxWidth="lg" className={classes.container}>
+          <CreateCategoryDialog
+            open={openCatDialog}
+            closeFunc={() => {setOpenCatDialog(false)}}
+          />
+          <CreatePageDialog
+            open={openPageDialog}
+            closeFunc={() => {setOpenPageDialog(false)}}
+          />
           <Grid container spacing={3}>
             {pageElem}
 

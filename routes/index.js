@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var sql = require('../sql');
 var request = require('request');
+var cheerio = require('cheerio');
 
 const fs = require('fs');
 
@@ -79,5 +80,44 @@ router.post('/cdx', function(req, res, next) {
   )
 });
 
+router.get('/delete/category/:catId', function(req, res, next) {
+  let categories = sql.deleteCategory(req.params.catId, (err) => {
+    console.log(err);
+    if (err === null) {
+      res.sendStatus(200)
+    } else {
+      res.json(err)
+    }
+  })
+});
+
+router.get('/delete/page/:id', function(req, res, next) {
+  let categories = sql.deletePage(req.params.id, (err, rows) => {
+    console.log(rows);
+    res.json(rows);
+  })
+});
+
+router.post('/create/category', function(req, res, next) {
+  let categories = sql.createNewCategory(req.body.name, req.body.desc, req.body.pid, (err, changes) => {
+    console.log(err, changes);
+    res.json(changes);
+  })
+});
+
+router.post('/create/page', function(req, res, next) {
+  console.log(req.body)
+  request(req.body.url,
+  (reqErr, reqRes, reqBody) => {
+    console.log("RES: ", reqErr)
+    const $ = cheerio.load(reqBody);
+    const pageTitle = $("title").text();
+    // console.log("Page title: ", pageTitle)
+    let categories = sql.createNewPage(req.body.url, pageTitle, req.body.desc, req.body.pid, (err, changes) => {
+      console.log(err, changes);
+      res.json(changes);
+    })
+  })
+});
 
 module.exports = router;
