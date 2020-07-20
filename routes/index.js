@@ -106,15 +106,23 @@ router.post('/create/category', function(req, res, next) {
 });
 
 router.post('/create/page', function(req, res, next) {
-  console.log(req.body)
+  // console.log(req.body)
   request(req.body.url,
   (reqErr, reqRes, reqBody) => {
-    console.log("RES: ", reqErr)
+    if (reqErr) {
+      res.status(500).send(reqErr)
+      return
+    }
     const $ = cheerio.load(reqBody);
     const pageTitle = $("title").text();
-    // console.log("Page title: ", pageTitle)
+    console.log("Page title: ", pageTitle)
     let categories = sql.createNewPage(req.body.url, pageTitle, req.body.desc, req.body.pid, (err, changes) => {
-      console.log(err, changes);
+      // console.log("SQL error: ", err);
+      // console.log("SQL changes: ", changes)
+      if (err) {
+        res.status(500).send(err)
+        return
+      }
       res.json(changes);
     })
   })

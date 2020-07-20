@@ -25,6 +25,7 @@ import ListItemText from '@material-ui/core/ListItemText';
 import ListSubheader from '@material-ui/core/ListSubheader';
 import DashboardIcon from '@material-ui/icons/Dashboard';
 import DeleteIcon from '@material-ui/icons/Delete';
+import AddIcon from '@material-ui/icons/AddCircle';
 import PeopleIcon from '@material-ui/icons/People';
 import BarChartIcon from '@material-ui/icons/BarChart';
 import LayersIcon from '@material-ui/icons/Layers';
@@ -42,6 +43,9 @@ import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
+import logoImg from "./logo.png";
+import Snackbar from '@material-ui/core/Snackbar';
+import CloseIcon from '@material-ui/icons/Close';
 
 const drawerWidth = 240;
 
@@ -49,7 +53,7 @@ function CreatePageDialog(props) {
   const [formUrl, setFormUrl] = useState("")
   // const [formTitle, setFormTitle] = useState("")
   const [formDesc, setFormDesc] = useState("")
-  const [formPid, setFormPid] = useState(1)
+  // const [formPid, setFormPid] = useState(1)
 
   let handleUrlChange = (event) => {
     setFormUrl(event.target.value)
@@ -64,7 +68,8 @@ function CreatePageDialog(props) {
   }
 
   let handlePidChange = (event) => {
-    setFormPid(event.target.value)
+    // setFormPid(event.target.value)
+    props.pidFunc(event.target.value)
   }
 
   let handleSubmit = () => {
@@ -78,16 +83,25 @@ function CreatePageDialog(props) {
         url: formUrl,
         // title: formTitle,
         desc: formDesc,
-        pid: formPid,
+        pid: props.pid,
       })
     })
-    .then(res => res.text())
+    .then(res => {
+      if (!res.ok) {
+        props.errFunc("Network error: " + res.text())
+        props.closeFunc()
+        return
+      }
+      return res.text()
+    })
     .then((result) => {
-      console.log("create category: ", req, typeof(result), result)
+      console.log("create page: ", req, result)
     })
     .catch((error) => {
-        console.log("Error: ", error)
+      console.log("Error: ", error)
+      props.errFunc("Error: " + error)
     })
+    props.closeFunc()
   }
 
   return(
@@ -125,7 +139,7 @@ function CreatePageDialog(props) {
           id="form-create-page-parentid"
           label="Parent ID"
           type="number"
-          value={formPid}
+          value={props.pid}
           onChange={handlePidChange}
         />
       </DialogContent>
@@ -370,10 +384,14 @@ function ShowCat(props) {
       >
         <FolderIcon style={{marginRight: 10}} />
         Category: {cat.id} - {cat.name}
-        <DeleteIcon
+        <AddIcon
           style={{position: "absolute", right: 50}}
-          onClick={deleteCat}
+          onClick={() => {props.addPageFunc(cat.id)}}
         />
+        {/*<DeleteIcon
+          style={{position: "absolute", right: 50}}
+          // onClick={deleteCat}
+        />*/}
       </AccordionSummary>
       <AccordionDetails
         style={{
@@ -381,7 +399,7 @@ function ShowCat(props) {
           flexDirection: "column",
         }}
       >
-        {subCats.map(cat => (<ShowCat id={cat.id} key={cat.id} />))}
+        {subCats.map(cat => (<ShowCat id={cat.id} key={cat.id} addPageFunc={props.addPageFunc} />))}
         {pages.map(page => (<ShowPage page={page} key={page.id} />))}
       </AccordionDetails>
     </Accordion>
@@ -535,6 +553,9 @@ const useStyles = makeStyles((theme) => ({
 export default function Dashboard() {
   const [openCatDialog, setOpenCatDialog] = React.useState(false)
   const [openPageDialog, setOpenPageDialog] = React.useState(false)
+  const [pageDialogPid, setPageDialogPid] = React.useState(1)
+  const [openErrSnackbar, setOpenErrSnackbar] = React.useState(false)
+  const [errSnackbarMsg, setErrSnackbarMsg] = React.useState("")
   const classes = useStyles();
   const [open, setOpen] = React.useState(true);
   const [page, setPage] = React.useState("pages");
@@ -552,7 +573,10 @@ export default function Dashboard() {
     case "pages":
       pageElem = (
         <Grid item xs={12}>
-        <ShowCat id={1} />
+        <ShowCat id={1} addPageFunc={(pid) => {
+          setPageDialogPid(pid)
+          setOpenPageDialog(true)
+        }}/>
         </Grid>
       )
       break
@@ -577,6 +601,7 @@ export default function Dashboard() {
           >
             <MenuIcon />
           </IconButton>
+          <img src={logoImg} alt="project logo" height={50} style={{transform: "rotate(-5deg)", marginRight: 10}} />
           <Typography component="h1" variant="h6" color="inherit" noWrap className={classes.title}>
             pywb scrapbook
           </Typography>
@@ -651,34 +676,37 @@ export default function Dashboard() {
           <CreatePageDialog
             open={openPageDialog}
             closeFunc={() => {setOpenPageDialog(false)}}
+            errFunc={(msg) => {
+              setErrSnackbarMsg(msg)
+              setOpenErrSnackbar(true)
+            }}
+            pid={pageDialogPid}
+            pidFunc={(newpid) => {setPageDialogPid(newpid)}}
           />
           <Grid container spacing={3}>
             {pageElem}
-
-            {/* Chart
-            <Grid item xs={12} md={8} lg={9}>
-              <Paper className={fixedHeightPaper}>
-                Chart here
-              </Paper>
-            </Grid>
-            {/* Recent Deposits
-            <Grid item xs={12} md={4} lg={3}>
-              <Paper className={fixedHeightPaper}>
-                Deposits
-              </Paper>
-            </Grid>
-            {/* Recent Orders
-            <Grid item xs={12}>
-              <Paper className={classes.paper}>
-                Orders
-              </Paper>
-            </Grid>
-            */}
           </Grid>
           <Box pt={4}>
             No Copyright
           </Box>
         </Container>
+        <Snackbar
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left',
+        }}
+        open={openErrSnackbar}
+        autoHideDuration={6000}
+        onClose={() => setOpenErrSnackbar(false)}
+        message={errSnackbarMsg}
+        action={
+          <React.Fragment>
+            <IconButton size="small" aria-label="close" color="inherit" onClick={() => setOpenErrSnackbar(false)}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </React.Fragment>
+        }
+      />
       </main>
     </div>
   );
